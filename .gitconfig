@@ -1,0 +1,9 @@
+[user]
+	name = Korolev
+	email = kunashir@list.ru
+[alias]
+	st = status
+        ci = commit
+        br = branch
+        co = checkout
+        di = diff
