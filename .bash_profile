@@ -1,65 +1,77 @@
-# .bash_profile file
-# By Balaji S. Srinivasan (balajis@stanford.edu)
-#
-# Concepts:
-# http://www.joshstaiger.org/archives/2005/07/bash_profile_vs.html
-#
-#    1) .bashrc is the *non-login* config for bash, run in scripts and after
-#        first connection.
-#
-#    2) .bash_profile is the *login* config for bash, launched upon first
-#        connection (in Ubuntu)
-#
-#    3) .bash_profile imports .bashrc in our script, but not vice versa.
-#
-#    4) .bashrc imports .bashrc_custom in our script, which can be used to
-#        override variables specified here.
-#
-# When using GNU screen:
-#
-#    1) .bash_profile is loaded the first time you login, and should be used
-#       only for paths and environmental settings
+# rbenv
+export RBENV_ROOT="${HOME}/.rbenv"
 
-#    2) .bashrc is loaded in each subsequent screen, and should be used for
-#       aliases and things like writing to .bash_eternal_history (see below)
-#
-# Do 'man bashrc' for the long version or see here:
-# http://en.wikipedia.org/wiki/Bash#Startup_scripts
-#
-# When Bash starts, it executes the commands in a variety of different scripts.
-#
-#   1) When Bash is invoked as an interactive login shell, it first reads
-#      and executes commands from the file /etc/profile, if that file
-#      exists. After reading that file, it looks for ~/.bash_profile,
-#      ~/.bash_login, and ~/.profile, in that order, and reads and executes
-#      commands from the first one that exists and is readable.
-#
-#   2) When a login shell exits, Bash reads and executes commands from the
-#      file ~/.bash_logout, if it exists.
-#
-#   3) When an interactive shell that is not a login shell is started
-#      (e.g. a GNU screen session), Bash reads and executes commands from
-#      ~/.bashrc, if that file exists. This may be inhibited by using the
-#      --norc option. The --rcfile file option will force Bash to read and
-#      execute commands from file instead of ~/.bashrc.
-
-## -----------------------
-## -- 1) Import .bashrc --
-## -----------------------
-
-# Factor out all repeated profile initialization into .bashrc
-#  - All non-login shell parameters go there
-#  - All declarations repeated for each screen session go there
-if [ -f ~/.bashrc ]; then
-   source ~/.bashrc
+if [ -d "${RBENV_ROOT}" ]; then
+  export PATH="${RBENV_ROOT}/bin:${PATH}"
+  eval "$(rbenv init -)"
 fi
 
-# Configure PATH
-#  - These are line by line so that you can kill one without affecting the others.
-#  - Lowest priority first, highest priority last.
-export PATH=$PATH
-export PATH=$HOME/bin:$PATH
-export PATH=/usr/bin:$PATH
-export PATH=/usr/local/bin:$PATH
-export PATH=/usr/local/sbin:$PATH
-export PATH=/usr/local/heroku/bin:$PATH # Heroku: https://toolbelt.heroku.com/standalone
+# Add `~/bin` to the `$PATH`
+export PATH="$HOME/bin:$PATH";
+
+# Load the shell dotfiles, and then some:
+# * ~/.path can be used to extend `$PATH`.
+# * ~/.extra can be used for other settings you don’t want to commit.
+for file in ~/.{path,bash_prompt,exports,aliases,functions,extra}; do
+	[ -r "$file" ] && [ -f "$file" ] && source "$file";
+done;
+unset file;
+
+# Case-insensitive globbing (used in pathname expansion)
+shopt -s nocaseglob;
+
+# Append to the Bash history file, rather than overwriting it
+shopt -s histappend;
+
+# Autocorrect typos in path names when using `cd`
+shopt -s cdspell;
+
+# Enable some Bash 4 features when possible:
+# * `autocd`, e.g. `**/qux` will enter `./foo/bar/baz/qux`
+# * Recursive globbing, e.g. `echo **/*.txt`
+for option in autocd globstar; do
+	shopt -s "$option" 2> /dev/null;
+done;
+
+# Add tab completion for many Bash commands
+if which brew &> /dev/null && [ -f "$(brew --prefix)/share/bash-completion/bash_completion" ]; then
+	source "$(brew --prefix)/share/bash-completion/bash_completion";
+elif [ -f /etc/bash_completion ]; then
+	source /etc/bash_completion;
+fi;
+
+# Enable tab completion for `g` by marking it as an alias for `git`
+if type _git &> /dev/null && [ -f /usr/local/etc/bash_completion.d/git-completion.bash ]; then
+	complete -o default -o nospace -F _git g;
+fi;
+
+# Add tab completion for SSH hostnames based on ~/.ssh/config, ignoring wildcards
+[ -e "$HOME/.ssh/config" ] && complete -o "default" -o "nospace" -W "$(grep "^Host" ~/.ssh/config | grep -v "[?*]" | cut -d " " -f2- | tr ' ' '\n')" scp sftp ssh;
+
+# Add tab completion for `defaults read|write NSGlobalDomain`
+# You could just use `-g` instead, but I like being explicit
+complete -W "NSGlobalDomain" defaults;
+
+# Add `killall` tab completion for common apps
+complete -o "nospace" -W "Contacts Calendar Dock Finder Mail Safari iTunes SystemUIServer Terminal Twitter" killall;
+eval "$(rbenv init -)"
+eval "$($HOME/Workspace/dalia/.dalek/bin/dalek init -)"
+
+[ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion || {
+    # if not found in /usr/local/etc, try the brew --prefix location
+    [ -f "$(brew --prefix)/etc/bash_completion.d/git-completion.bash" ] && \
+        . $(brew --prefix)/etc/bash_completion.d/git-completion.bash
+}
+
+alias csd='cap staging deploy:migrations branch=staging'
+alias cpd='cap production deploy:migrations
+ branch=master'
+alias r='rails'
+alias reset_test='bin/rails db:environment:set RAILS_ENV=test; r db:drop RAILS_ENV=test; rm db/schema.rb ; r db:setup RAILS_ENV=test; r db:migrate RAILS_ENV=test'
+export LANG="en_US.UTF-8"
+alias caps='git push origin staging; cap staging deploy'
+alias capd='git push origin production; cap production deploy'
+alias gcos='git co staging; git pull origin staging'
+alias gcom='git co master; git pull origin master'
+alias cdd='cd ~/Workspace/dalia'
+alias be='bundle exec'
