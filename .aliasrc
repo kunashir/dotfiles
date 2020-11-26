@@ -1,0 +1,13 @@
+alias csd='cap staging deploy:migrations branch=staging'
+alias cpd='cap production deploy:migrations
+ branch=master'
+alias r='rails'
+alias reset_test='bin/rails db:environment:set RAILS_ENV=test; r db:drop RAILS_ENV=test; rm db/schema.rb ; r db:setup RAILS_ENV=test; r db:migrate RAILS_ENV=test'
+export LANG="en_US.UTF-8"
+alias caps='git push origin staging; cap staging deploy'
+alias capd='git push origin production; cap production deploy'
+alias gcos='git co staging; git pull origin staging'
+alias gcom='git co master; git pull origin master'
+alias cdd='cd ~/Workspace/dalia'
+alias be='bundle exec'
+
