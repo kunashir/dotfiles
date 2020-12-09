@@ -1,0 +1,5 @@
+#you need to get new ctags, i recommend homebrew but anything will work
+$ brew install ctags
+
+#alias ctags if you used homebrew
+$ alias ctags="`brew --prefix`/bin/ctags"
